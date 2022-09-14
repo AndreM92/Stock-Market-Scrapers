@@ -1,5 +1,5 @@
 # Stock-Market-Scrapers
-These are my Python Web Scrapers for Stocks that I wanted to share
+These are my Python Web Scrapers for Stocks that I want to share with you
 
 ## MarketWatchScraper
 This is a basic Web Scraping program from the webpage https://www.marketwatch.com/
