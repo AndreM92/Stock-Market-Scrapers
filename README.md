@@ -2,9 +2,9 @@
 These are my Python Web Scrapers for Stocks that I want to share with you
 
 ## MarketWatchScraper
-This is a basic Web Scraping program from the webpage https://www.marketwatch.com/
-you can investigate shares, indices, funds, cryptoturrencies and much more
-the data will be stored in a dataframe
+This is a basic Web Scraping program from the webpage https://www.marketwatch.com/</br>
+You can investigate shares, indices, funds, cryptoturrencies and much more.</br>
+After collecting, the data will be stored in a dataframe.
 
 ## ExtendedStockScraper
 is a little bit more complex and not finished yet.
