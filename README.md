@@ -19,3 +19,7 @@ calculate the worth of my portfolio, export complex Dataframes and visualise dev
 
 I also wrote code to append the data on an existing file to create some built-in graphs, 
 but openpyxl always deletes my Excel commands :( 
+
+##PyQt extension
+I was able to solve the problems with Excel by creating a PyQt desktop application.
+This extension of my Scraper puts all the data in tables and visualises the asset distribution of my portfolio with a pie chart.
