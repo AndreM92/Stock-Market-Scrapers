@@ -67,6 +67,8 @@ def portfolioStockScraper(x):
     soup = BeautifulSoup(r.text, 'html.parser')
     if row[1]['category'] == 'stocks':
         price = soup.find('span', {'class': 'snapshot__value-current realtime-push'}).text.replace(' ','')
+        if price == 'EUR' or price == 'USD':
+            price = str(soup.find('div', {'class': 'snapshot__values-second'}).find('span').find('span').text) + price
         table = soup.find_all('table', {'class': 'table table--content-right table--headline-first-col'})
         for t in table:
             if 'EUR' in t.find_all('td')[1].text:
