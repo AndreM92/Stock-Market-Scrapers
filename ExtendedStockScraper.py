@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
-import lxml
+import lxml 
+# if the package lxml shows problems with Python 3.11 use: html.parser instead
 import numpy as np
 import pandas as pd
 import openpyxl
@@ -23,7 +24,7 @@ dfStMarket = pd.DataFrame(columns = stMaHeaders)
 def stockMarketScraper(x):
     time.sleep(.1)
     r = requests.get(x[1]['link'])
-    soup = BeautifulSoup(r.text, 'lxml')
+    soup = BeautifulSoup(r.text, 'html.parser')
     name = x[1]['shortname']
     category = x[1]['category']
     price = soup.find('div',{'class':'col-xs-5'}).text.strip()
@@ -63,7 +64,7 @@ def portfolioStockScraper(x):
     # Portfolio Scraper
  #   time.sleep(.1)
     r = requests.get(x[1]['link'])
-    soup = BeautifulSoup(r.text, 'lxml')
+    soup = BeautifulSoup(r.text, 'html.parser')
     if row[1]['category'] == 'stocks':
         price = soup.find('span', {'class': 'snapshot__value-current realtime-push'}).text.replace(' ','')
         table = soup.find_all('table', {'class': 'table table--content-right table--headline-first-col'})
