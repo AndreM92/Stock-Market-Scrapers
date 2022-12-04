@@ -27,9 +27,20 @@ def stockMarketScraper(x):
     soup = BeautifulSoup(r.text, 'html.parser')
     name = x[1]['shortname']
     category = x[1]['category']
-    price = soup.find('div',{'class':'col-xs-5'}).text.strip()
-    plusminus = soup.find('div',{'class':'col-xs-4'}).text.strip()
-    percent = soup.find('div',{'class':'col-xs-3'}).text.strip()
+    price,plusminus,percent = np.array(['NaN' for i in range(0,3)])
+    try:
+        price = soup.find('div',{'class':'col-xs-5'}).text.strip()
+        plusminus = soup.find('div',{'class':'col-xs-4'}).text.strip()
+        percent = soup.find('div',{'class':'col-xs-3'}).text.strip()
+    except:
+        pass
+    if price == 'NaN':
+        try:
+            price = soup.find('div', {'class': 'snapshot__value-current realtime-push'}).find('span').text.split('\n')[0].strip()
+            plusminus = soup.find('div',{'class': 'snapshot__value-absolute realtime-push realtime-push--state-positive'}).find('span').text.strip()
+            percent = soup.find('div',{'class': 'snapshot__value-relative realtime-push realtime-push--state-positive'}).find('span').text.strip()
+        except:
+            pass
     factor = re.sub('[USDEURCHFPKT.]','',price).replace(',','.')
     datarow = [name,category,price,plusminus,percent,factor]
     return datarow
