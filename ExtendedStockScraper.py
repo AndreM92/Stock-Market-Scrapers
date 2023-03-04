@@ -27,21 +27,19 @@ def stockMarketScraper(x):
     soup = BeautifulSoup(r.text, 'html.parser')
     name = x[1]['shortname']
     category = x[1]['category']
-    price,plusminus,percent = np.array(['NaN' for i in range(0,3)])
+    price, plusminus, percent = np.zeros(3)
     try:
-        price = soup.find('div',{'class':'col-xs-5'}).text.strip()
-        plusminus = soup.find('div',{'class':'col-xs-4'}).text.strip()
-        percent = soup.find('div',{'class':'col-xs-3'}).text.strip()
+        values = [e.text.strip() for e in soup.find('div', {'class': 'snapshot__values'}) if len(e) >= 3]
     except:
         pass
-    if price == 'NaN':
-        try:
-            price = soup.find('div', {'class': 'snapshot__value-current realtime-push'}).find('span').text.split('\n')[0].strip()
-            plusminus = soup.find('div',{'class': 'snapshot__value-absolute realtime-push realtime-push--state-positive'}).find('span').text.strip()
-            percent = soup.find('div',{'class': 'snapshot__value-relative realtime-push realtime-push--state-positive'}).find('span').text.strip()
-        except:
-            pass
-    factor = re.sub('[USDEURCHFPKT.]','',price).replace(',','.')
+    if len(values) >= 3:
+        c_val = [re.sub("[^ \w\%.,+-]", "", e) for e in values]
+        price = c_val[0]
+        plusminus = c_val[-2]
+        percent = c_val[-1]
+    factor = float(re.sub('[.%a-zA-Z+-]', '', price).replace(',', '.'))
+    if price == 0:
+        price = 'NaN'
     datarow = [name,category,price,plusminus,percent,factor]
     return datarow
 
@@ -72,14 +70,15 @@ def portfolioStockScraper(x):
     abase = round(x[1]['asset base'],2)
     longHigh = 'NaN'
     longLow = 'NaN'
+    price = 0
     # Portfolio Scraper
- #   time.sleep(.1)
+    time.sleep(.1)
     r = requests.get(x[1]['link'])
     soup = BeautifulSoup(r.text, 'html.parser')
     if row[1]['category'] == 'stocks':
-        price = soup.find('span', {'class': 'snapshot__value-current realtime-push'}).text.replace(' ','')
-        if price == 'EUR' or price == 'USD':
-            price = str(soup.find('div', {'class': 'snapshot__values-second'}).find('span').find('span').text) + price
+        curr = soup.find('span', {'class': 'snapshot__value-current realtime-push'}).text.replace(' ','')
+        if curr == 'EUR' or curr == 'USD':
+            price = str(soup.find('div', {'class': 'snapshot__values-second'}).find('span').find('span').text) + curr
         table = soup.find_all('table', {'class': 'table table--content-right table--headline-first-col'})
         for t in table:
             if 'EUR' in t.find_all('td')[1].text:
