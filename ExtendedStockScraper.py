@@ -71,29 +71,44 @@ def portfolioStockScraper(x):
     longHigh = 'NaN'
     longLow = 'NaN'
     price = 0
+    digits = 0
+    usd = float(dfStMarket[dfStMarket['name'] == 'Dollar']['factor'])
+
     # Portfolio Scraper
     time.sleep(.1)
     r = requests.get(x[1]['link'])
     soup = BeautifulSoup(r.text, 'html.parser')
     if row[1]['category'] == 'stocks':
-        curr = soup.find('span', {'class': 'snapshot__value-current realtime-push'}).text.replace(' ','')
-        if curr == 'EUR' or curr == 'USD':
-            price = str(soup.find('div', {'class': 'snapshot__values-second'}).find('span').find('span').text) + curr
+        try:
+            values = [e.text.strip() for e in soup.find('div', {'class': 'snapshot__values'}) if len(e) >= 3]
+        except:
+            try:
+                values = [e.text.strip() for e in soup.find('div', {'class': 'table-responsive quotebox'}) if
+                          len(e) >= 3]
+            except:
+                pass
+        if (len(values) < 3 and len(values) >= 1) or len(re.sub("[.%a-zA-Z+-]", "", values[0])) <= 1:
+            try:
+                values = [e.text.strip() for e in soup.find('div', {'class': 'snapshot__values-second'}) if len(e) >= 3]
+                c_val = [re.sub("[^ \w\%.,+-]", "", e) for e in values]
+                price, plusminus, percent = c_val[:3]
+            except:
+                pass
+        if price == 0 and (len(values) >= 1 and len(values[0]) < 3) and len(values[0]) > 3:
+            valj = ''.join(values)
+            c_val = re.sub("[^ \w\%.,+-]", " ", valj).split(' ')
+            if len(c_val) >= 3:
+                price, plusminus, percent = c_val[:3]
+        if price == 0 and len(values) >= 3:
+            c_val = [re.sub("[^ \w\%.,+-]", "", e) for e in values]
+            price, plusminus, percent = c_val[:3]
+
         table = soup.find_all('table', {'class': 'table table--content-right table--headline-first-col'})
         for t in table:
             if 'EUR' in t.find_all('td')[1].text:
                 longHigh = t.find_all('td')[13].text.split(' ')[0]
                 longLow = t.find_all('td')[15].text.split(' ')[0]
-        if longHigh == 0 or longHigh == 'NaN':
-            try:
-                table = soup.find_all('article',{'class':'page-content__item'})[2].find('tbody').find_all('td')
-                lowfloat = float(str(table[-3].text).split(' ')[0].replace(',','.'))/float(dfStMarket.loc[4]['factor'])
-                longLow = round(lowfloat, 2)
-                highfloat = float(str(table[-5].text).split(' ')[0].replace(',','.'))/float(dfStMarket.loc[4]['factor'])
-                longHigh = round(lowfloat, 2)
-            except:
-                longHigh = 'NaN'
-                longLow = 'NaN'
+
     elif row[1]['category'] == 'funds':
         price = soup.find('div', {'class':'table-responsive quotebox'}).find('td').text.replace(' ','')
         tablef = soup.find_all('div', {'id': 'SnapshotQuoteData'})[0].find_all('td')
@@ -105,11 +120,12 @@ def portfolioStockScraper(x):
         for t in tablec:
             longLow = round(float(t.find_all('td')[-3].text.split(' ')[0].replace('.','').replace(',','.')),2)
             longHigh = round(float(t.find_all('td')[-1].text.split(' ')[0].replace('.','').replace(',','.')),2)
-    if 'USD' in price:
-        priceUSD = float(re.sub('[USDEURCHF.]', '',str(price)).replace(',','.'))
-        price = priceUSD/float(dfStMarket.loc[4]['factor'])
+
+    if 'usd' in str(price).lower() and usd != 0:
+        digits = float(re.sub('[ .%a-zA-Z+-]', '', str(price)).replace(',', '.'))
+        price = round(digits / usd,2)
     else:
-        price = float(re.sub('[USDEURCHFPKT.]','',str(price)).replace(',','.'))
+        price = float(re.sub('[ .%a-zA-Z+-]', '', str(price)).replace(',', '.'))
 
     # Based on the data I can calculate my current asset, earnings and losses for every stock
     cur_asset = round(number * price,2)
@@ -117,6 +133,7 @@ def portfolioStockScraper(x):
     winlossP = round((cur_asset-abase)/abase*100,2)
 
     # personal preference
+    price = str(price).replace('.',',') + ' EUR'
     if str(number)[-1] == '0':
         number = int(number)
     else:
@@ -124,9 +141,9 @@ def portfolioStockScraper(x):
 
     datarow = [name,category,number,b_course,price,abase,cur_asset,winloss,winlossP,longHigh,longLow]
     return datarow
-
-
-# Saving scraped data into the dataframe Portfolio
+    
+    
+# Saving scraped data into the DataFrame Portfolio
 for row in sources_f.iterrows():
     dfPortfolio.loc[len(dfPortfolio)] = portfolioStockScraper(row)
 dfPortfolio.index = dfPortfolio.index + 1
