@@ -1,6 +1,7 @@
 import sys
 from qtpy import QtWidgets
 
+import re
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -15,8 +16,19 @@ from Qt_Creator.mainwindow import Ui_MainWindow
 from StockScraper import dfStMarket, dfPortfolio, categories
 total = dfPortfolio[-1:]
 
-app = QtWidgets.QApplication(sys.argv)
+# Regex
+curr_ass = re.sub(r"(\d+)(\d{3}).(\d{2})\w*$", r"\1.\2,\3",str('{:.2f}'.format(float(total['current asset']))))
+ass_base = re.sub(r"(\d+)(\d{3}).(\d{2})\w*$", r"\1.\2,\3",str('{:.2f}'.format(float(total['asset base']))))
+win_loss = re.sub(r"([+-]?\d+)(\d{3}).(\d{2})\w*$", r"\1.\2,\3",str('{:.2f}'.format(float(total['win/loss(EUR)']))))
+win_loss_p = str('{:.2f}'.format(float(total['win/loss(%)']))).replace('.', ',')
 
+currencies = re.sub(r"(\d*)(\d{3})\.(\d{2})\w*$", r"\1.\2,\3", str('{:.2f}'.format(float(categories[0]))))
+stocks = re.sub(r"(\d+)(\d{3}).(\d{2})\w*$", r"\1.\2,\3", str('{:.2f}'.format(float(categories[1]))))
+asiafunds = re.sub(r"(\d+)(\d{3}).(\d{2})\w*$", r"\1.\2,\3", str('{:.2f}'.format(float(categories[2]))))
+worldfunds = re.sub(r"(\d+)(\d{3}).(\d{2})\w*$", r"\1.\2,\3", str('{:.2f}'.format(float(categories[3]))))
+
+
+app = QtWidgets.QApplication(sys.argv)
 
 # Class MainWindow inherits all characteristics of QtWidgets and QMainWindow
 class MainWindow(QtWidgets.QMainWindow):
@@ -31,18 +43,18 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.fillMarketTable()
         self.fillPortfolioTable()
-        self.ui.portValue.setText(str(float(total['current asset'])).replace('.', ',') + ' EUR')
-        self.ui.assetBase.setText(str(float(total['asset base'])).replace('.', ',') + ' EUR')
-        self.ui.winLoss.setText(str(float(total['win/loss(EUR)'])).replace('.', ',') + ' EUR')
-        self.ui.winLossP.setText(str(float(total['win/loss(%)'])).replace('.', ',') + ' %')
-        if '-' in str(total['win/loss(EUR)']):
+        self.ui.portValue.setText(curr_ass + ' EUR')
+        self.ui.assetBase.setText(ass_base + ' EUR')
+        self.ui.winLoss.setText(win_loss + ' EUR')
+        self.ui.winLossP.setText(win_loss_p + ' %')
+        if '-' in win_loss:
             self.ui.winLoss.setStyleSheet('QLineEdit{color:red}')
             self.ui.winLossP.setStyleSheet('QLineEdit{color:red}')
 
-        self.ui.currencies.setText(str(round(categories[0])).replace('.', ',') + ' EUR')
-        self.ui.stocks.setText(str(round(categories[1],2)).replace('.', ',') + ' EUR')
-        self.ui.asiafunds.setText(str(round(categories[2])).replace('.', ',') + ' EUR')
-        self.ui.worldfunds.setText(str(round(categories[3])).replace('.', ',') + ' EUR')
+        self.ui.currencies.setText(currencies + ' EUR')
+        self.ui.stocks.setText(stocks + ' EUR')
+        self.ui.asiafunds.setText(asiafunds + ' EUR')
+        self.ui.worldfunds.setText(worldfunds + ' EUR')
 
         # Create Canvas figure
         self.figure = plt.figure()
