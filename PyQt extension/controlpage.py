@@ -2,30 +2,24 @@ import sys
 from qtpy import QtWidgets
 
 import re
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 from datetime import datetime
 date = 'Date: ' + datetime.now().strftime('%d.%m.%Y, Time: %H:%M:%S')
 
-# import the class MainWindow from mainwindow.py
+# Import the class MainWindow from mainwindow.py
 from Qt_Creator.mainwindow import Ui_MainWindow
 
-from StockScraper import dfStMarket, dfPortfolio, categories
-total = dfPortfolio[-1:]
+# Import the DataFrames from StockScraper.py
+from StockScraper import dfStMarket, dfPfStr, dfCat
 
-# Regex
-curr_ass = re.sub(r"(\d+)(\d{3}).(\d{2})\w*$", r"\1.\2,\3",str('{:.2f}'.format(float(total['current asset']))))
-ass_base = re.sub(r"(\d+)(\d{3}).(\d{2})\w*$", r"\1.\2,\3",str('{:.2f}'.format(float(total['asset base']))))
-win_loss = re.sub(r"([+-]?\d+)(\d{3}).(\d{2})\w*$", r"\1.\2,\3",str('{:.2f}'.format(float(total['win/loss(EUR)']))))
-win_loss_p = str('{:.2f}'.format(float(total['win/loss(%)']))).replace('.', ',')
-
-currencies = re.sub(r"(\d*)(\d{3})\.(\d{2})\w*$", r"\1.\2,\3", str('{:.2f}'.format(float(categories[0]))))
-stocks = re.sub(r"(\d+)(\d{3}).(\d{2})\w*$", r"\1.\2,\3", str('{:.2f}'.format(float(categories[1]))))
-asiafunds = re.sub(r"(\d+)(\d{3}).(\d{2})\w*$", r"\1.\2,\3", str('{:.2f}'.format(float(categories[2]))))
-worldfunds = re.sub(r"(\d+)(\d{3}).(\d{2})\w*$", r"\1.\2,\3", str('{:.2f}'.format(float(categories[3]))))
+total = dfPfStr.loc[len(dfPfStr.index)]
+currencies, stocks, asiafunds, worldfunds = [re.sub(r"(\w+)(\d{3})\.(\d{2})$", r"\1.\2,\3",str('{:.2f}'.format(float(i)))) \
+    if len('{:.2f}'.format(float(i))) > 6 else str('{:.2f}'.format(float(i))).replace('.',',') for i in dfCat['value']]
 
 
 app = QtWidgets.QApplication(sys.argv)
@@ -43,11 +37,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.fillMarketTable()
         self.fillPortfolioTable()
-        self.ui.portValue.setText(curr_ass + ' EUR')
-        self.ui.assetBase.setText(ass_base + ' EUR')
-        self.ui.winLoss.setText(win_loss + ' EUR')
-        self.ui.winLossP.setText(win_loss_p + ' %')
-        if '-' in win_loss:
+        self.ui.portValue.setText(total['current asset'] + ' EUR')
+        self.ui.assetBase.setText(total['asset base'] + ' EUR')
+        self.ui.winLoss.setText(total['win/loss(EUR)'] + ' EUR')
+        self.ui.winLossP.setText(total['win/loss(%)'] + ' %')
+        if '-' in str(total['win/loss(EUR)']):
             self.ui.winLoss.setStyleSheet('QLineEdit{color:red}')
             self.ui.winLossP.setStyleSheet('QLineEdit{color:red}')
 
@@ -74,20 +68,20 @@ class MainWindow(QtWidgets.QMainWindow):
                 col = col + 1
 
     def fillPortfolioTable(self):
-        for r in dfPortfolio[:-1].iterrows():
+        for r in dfPfStr[:-1].iterrows():
             row = self.ui.tabWidP.rowCount()
             self.ui.tabWidP.insertRow(row)
             col = 0
             for e in r[1]:
-                self.ui.tabWidP.setItem(row, col, QtWidgets.QTableWidgetItem(str(e)[:10]))
+                self.ui.tabWidP.setItem(row, col, QtWidgets.QTableWidgetItem(str(e)[:12]))
                 col = col + 1
 
     def createPieChart(self):
         # I want to visualise the stock distribution of my portfolio
-        labels = ['Currencies', 'Stocks', 'Asiafunds', 'Worldfunds']
-        # category values are already calculated ad imported
-        total = sum(categories)
-        percentages = [c / total for c in categories]
+        labels = [n for n in dfCat['name']]
+        # category values and percentages are already calculated and imported
+#        totalCat = np.sum(dfCat['value'])
+        percentages = [p for p in dfCat['parts']]
 
         plt.pie(percentages,labels=labels,autopct='%1.2f%%',startangle=90)
         self.canvas.draw()
